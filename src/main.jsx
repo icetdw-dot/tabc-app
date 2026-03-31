@@ -5,7 +5,15 @@ import App from './App.jsx'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    if (import.meta.env.PROD) {
+      navigator.serviceWorker.register('/sw.js')
+      return
+    }
+
+    // Avoid stale cache during local development.
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => registration.unregister())
+    })
   })
 }
 

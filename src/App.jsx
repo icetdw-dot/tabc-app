@@ -11,12 +11,13 @@ const TABS = [
   { key: 'records', label: '记录' },
 ]
 
-function createRecord(studentId, type, amount) {
+function createRecord(studentId, type, amount, paymentAmount = null) {
   return {
     id: crypto.randomUUID(),
     studentId,
     type,
     amount,
+    paymentAmount,
     date: new Date().toISOString(),
   }
 }
@@ -55,13 +56,7 @@ function App() {
       },
       ...appData.students,
     ]
-
-    const nextRecords = [
-      createRecord(studentId, 'recharge', initialLessons),
-      ...appData.records,
-    ]
-
-    persistData({ students: nextStudents, records: nextRecords })
+    persistData({ students: nextStudents, records: appData.records })
   }
 
   const handleDeleteStudent = (studentId) => {
@@ -69,14 +64,17 @@ function App() {
     persistData({ ...appData, students: nextStudents })
   }
 
-  const handleRecharge = (studentId, amount) => {
+  const handlePayment = (studentId, paymentAmount, lessonAmount) => {
     const nextStudents = appData.students.map((student) =>
       student.id === studentId
-        ? { ...student, remainingLessons: student.remainingLessons + amount }
+        ? { ...student, remainingLessons: student.remainingLessons + lessonAmount }
         : student,
     )
 
-    const nextRecords = [createRecord(studentId, 'recharge', amount), ...appData.records]
+    const nextRecords = [
+      createRecord(studentId, 'recharge', lessonAmount, paymentAmount),
+      ...appData.records,
+    ]
     persistData({ students: nextStudents, records: nextRecords })
   }
 
@@ -118,7 +116,7 @@ function App() {
             onSearch={setSearchKeyword}
             onOpenAddModal={() => setIsAddModalOpen(true)}
             onDeleteStudent={handleDeleteStudent}
-            onRecharge={handleRecharge}
+            onPayment={handlePayment}
           />
         )}
 
