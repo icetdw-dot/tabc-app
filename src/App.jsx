@@ -11,13 +11,14 @@ const TABS = [
   { key: 'records', label: '记录' },
 ]
 
-function createRecord(studentId, type, amount, paymentAmount = null) {
+function createRecord(studentId, type, amount, paymentAmount = null, sessions = []) {
   return {
     id: crypto.randomUUID(),
     studentId,
     type,
     amount,
     paymentAmount,
+    sessions,
     date: new Date().toISOString(),
   }
 }
@@ -36,9 +37,18 @@ function App() {
     [appData.records],
   )
 
-  const studentsMap = useMemo(
-    () => Object.fromEntries(appData.students.map((student) => [student.id, student])),
+  const normalizedStudents = useMemo(
+    () =>
+      appData.students.map((student) => ({
+        ...student,
+        schedule: Array.isArray(student.schedule) ? student.schedule : [],
+      })),
     [appData.students],
+  )
+
+  const studentsMap = useMemo(
+    () => Object.fromEntries(normalizedStudents.map((student) => [student.id, student])),
+    [normalizedStudents],
   )
 
   const persistData = (nextData) => {
@@ -53,6 +63,7 @@ function App() {
         id: studentId,
         name: name.trim(),
         remainingLessons: initialLessons,
+        schedule: [],
       },
       ...appData.students,
     ]
@@ -78,28 +89,40 @@ function App() {
     persistData({ students: nextStudents, records: nextRecords })
   }
 
-  const handleDeductLesson = (studentId, type) => {
+  const handleDeductLesson = (studentId, type, sessions) => {
+    const deductionCount = sessions.length
     const targetStudent = appData.students.find((student) => student.id === studentId)
-    if (!targetStudent || targetStudent.remainingLessons <= 0) return
+    if (!targetStudent || deductionCount <= 0) return
+    if (targetStudent.remainingLessons < deductionCount) return
 
     const nextStudents = appData.students.map((student) =>
       student.id === studentId
-        ? { ...student, remainingLessons: student.remainingLessons - 1 }
+        ? { ...student, remainingLessons: student.remainingLessons - deductionCount }
         : student,
     )
 
-    const nextRecords = [createRecord(studentId, type, -1), ...appData.records]
+    const nextRecords = [
+      createRecord(studentId, type, -deductionCount, null, sessions),
+      ...appData.records,
+    ]
     persistData({ students: nextStudents, records: nextRecords })
+  }
+
+  const handleUpdateStudentSchedule = (studentId, schedule) => {
+    const nextStudents = appData.students.map((student) =>
+      student.id === studentId ? { ...student, schedule } : student,
+    )
+    persistData({ ...appData, students: nextStudents })
   }
 
   const filteredStudents = useMemo(() => {
     const normalizedKeyword = searchKeyword.trim().toLowerCase()
-    if (!normalizedKeyword) return appData.students
+    if (!normalizedKeyword) return normalizedStudents
 
-    return appData.students.filter((student) =>
+    return normalizedStudents.filter((student) =>
       student.name.toLowerCase().includes(normalizedKeyword),
     )
-  }, [appData.students, searchKeyword])
+  }, [normalizedStudents, searchKeyword])
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-slate-50 text-slate-900">
@@ -117,11 +140,13 @@ function App() {
             onOpenAddModal={() => setIsAddModalOpen(true)}
             onDeleteStudent={handleDeleteStudent}
             onPayment={handlePayment}
+            records={sortedRecords}
+            onUpdateStudentSchedule={handleUpdateStudentSchedule}
           />
         )}
 
         {activeTab === 'attendance' && (
-          <Attendance students={appData.students} onDeductLesson={handleDeductLesson} />
+          <Attendance students={normalizedStudents} onDeductLesson={handleDeductLesson} />
         )}
 
         {activeTab === 'records' && (

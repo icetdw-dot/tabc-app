@@ -147,10 +147,15 @@ function Records({ records, studentsMap }) {
                   </p>
                 </>
               ) : (
-                <p className="mt-2 text-sm text-slate-600">
-                  课时变动：{amountPrefix}
-                  {record.amount}
-                </p>
+                <>
+                  <p className="mt-2 text-sm text-slate-600">
+                    课时变动：{amountPrefix}
+                    {record.amount}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    时段：{record.sessions?.length ? record.sessions.join(', ') : '-'}
+                  </p>
+                </>
               )}
               <p className="mt-1 text-xs text-slate-500">{formatDate(record.date)}</p>
             </article>

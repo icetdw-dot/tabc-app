@@ -15,7 +15,19 @@ export function loadAppData() {
       return defaultData
     }
 
-    return parsed
+    const students = parsed.students.map((student) => ({
+      ...student,
+      schedule: Array.isArray(student.schedule) ? student.schedule : [],
+    }))
+
+    const records = parsed.records.map((record) => ({
+      ...record,
+      sessions: Array.isArray(record.sessions) ? record.sessions : [],
+      paymentAmount:
+        typeof record.paymentAmount === 'number' ? record.paymentAmount : null,
+    }))
+
+    return { students, records }
   } catch {
     return defaultData
   }

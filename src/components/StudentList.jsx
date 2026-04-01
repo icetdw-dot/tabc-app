@@ -1,21 +1,63 @@
 import { useState } from 'react'
 
-function StudentCard({ student, onDeleteStudent, onPayment }) {
+const WEEKDAY_OPTIONS = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
+
+function formatDateTime(dateString) {
+  return new Date(dateString).toLocaleString('zh-CN', {
+    hour12: false,
+  })
+}
+
+function StudentCard({
+  student,
+  onDeleteStudent,
+  onPayment,
+  records,
+  onUpdateStudentSchedule,
+}) {
   const [showPaymentForm, setShowPaymentForm] = useState(false)
+  const [showStudentRecords, setShowStudentRecords] = useState(false)
+  const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState('')
-  const [lessonAmount, setLessonAmount] = useState('')
+  const [lessonAmount, setLessonAmount] = useState('0')
+  const [weekday, setWeekday] = useState(WEEKDAY_OPTIONS[0])
+  const [timeSlot, setTimeSlot] = useState('')
 
   const submitPayment = (event) => {
     event.preventDefault()
     const payment = Number(paymentAmount)
     const lessons = Number(lessonAmount)
     if (Number.isNaN(payment) || payment <= 0) return
-    if (Number.isNaN(lessons) || lessons <= 0) return
+    if (Number.isNaN(lessons) || lessons < 0) return
 
     onPayment(student.id, payment, lessons)
     setPaymentAmount('')
-    setLessonAmount('')
+    setLessonAmount('0')
     setShowPaymentForm(false)
+  }
+
+  const studentRecords = records.filter((record) => record.studentId === student.id)
+  const studentSchedule = student.schedule ?? []
+
+  const addSchedule = (event) => {
+    event.preventDefault()
+    const trimmedSlot = timeSlot.trim()
+    if (!trimmedSlot) return
+    const nextSchedule = [
+      ...studentSchedule,
+      {
+        id: crypto.randomUUID(),
+        weekday,
+        timeSlot: trimmedSlot,
+      },
+    ]
+    onUpdateStudentSchedule(student.id, nextSchedule)
+    setTimeSlot('')
+  }
+
+  const removeSchedule = (scheduleId) => {
+    const nextSchedule = studentSchedule.filter((item) => item.id !== scheduleId)
+    onUpdateStudentSchedule(student.id, nextSchedule)
   }
 
   return (
@@ -65,19 +107,119 @@ function StudentCard({ student, onDeleteStudent, onPayment }) {
           />
           <input
             type="number"
-            min="1"
+            min="0"
             value={lessonAmount}
             onChange={(event) => setLessonAmount(event.target.value)}
             className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
-            placeholder="增加课数"
+            placeholder="增加课数(可0)"
           />
           <button
             type="submit"
             className="col-span-2 h-11 rounded-xl bg-slate-900 px-3 text-sm font-semibold text-white"
           >
-            记录付款并加课
+            记录付款
           </button>
         </form>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setShowScheduleForm((prev) => !prev)}
+        className="mt-3 h-11 w-full rounded-xl bg-indigo-100 px-3 text-sm font-semibold text-indigo-700"
+      >
+        {showScheduleForm ? '收起上课安排' : '配置上课安排'}
+      </button>
+
+      {showScheduleForm && (
+        <div className="mt-3 rounded-xl bg-slate-50 p-3">
+          <form onSubmit={addSchedule} className="grid grid-cols-2 gap-2">
+            <select
+              value={weekday}
+              onChange={(event) => setWeekday(event.target.value)}
+              className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
+            >
+              {WEEKDAY_OPTIONS.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+            <input
+              value={timeSlot}
+              onChange={(event) => setTimeSlot(event.target.value)}
+              className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
+              placeholder="时段，如 1-3pm"
+            />
+            <button
+              type="submit"
+              className="col-span-2 h-11 rounded-xl bg-indigo-600 px-3 text-sm font-semibold text-white"
+            >
+              添加安排
+            </button>
+          </form>
+
+          <div className="mt-3 space-y-2">
+            {studentSchedule.length === 0 ? (
+              <p className="text-xs text-slate-500">尚未添加上课安排</p>
+            ) : (
+              studentSchedule.map((item) => (
+                <div key={item.id} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
+                  <p className="text-xs text-slate-700">
+                    {item.weekday} {item.timeSlot}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => removeSchedule(item.id)}
+                    className="text-xs font-semibold text-rose-600"
+                  >
+                    删除
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setShowStudentRecords((prev) => !prev)}
+        className="mt-3 h-11 w-full rounded-xl bg-slate-100 px-3 text-sm font-semibold text-slate-700"
+      >
+        {showStudentRecords ? '收起个人记录' : '查看个人记录'}
+      </button>
+
+      {showStudentRecords && (
+        <div className="mt-3 rounded-xl bg-slate-50 p-3">
+          {studentRecords.length === 0 ? (
+            <p className="text-xs text-slate-500">该学生暂无记录</p>
+          ) : (
+            <div className="space-y-2">
+              {studentRecords.map((record) => (
+                <div key={record.id} className="rounded-lg bg-white p-2 ring-1 ring-slate-200">
+                  <p className="text-xs font-semibold text-slate-700">
+                    {record.type === 'recharge'
+                      ? `付款 RM ${Number(record.paymentAmount ?? 0).toFixed(2)}`
+                      : record.type === 'attendance'
+                        ? '点名扣课'
+                        : '补课扣课'}
+                  </p>
+                  {record.type === 'recharge' ? (
+                    <p className="mt-1 text-xs text-slate-500">增加课数：+{record.amount}</p>
+                  ) : (
+                    <>
+                      <p className="mt-1 text-xs text-slate-500">扣课：{record.amount}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        时段：{record.sessions?.length ? record.sessions.join(', ') : '-'}
+                      </p>
+                    </>
+                  )}
+                  <p className="mt-1 text-xs text-slate-400">{formatDateTime(record.date)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </article>
   )
@@ -90,6 +232,8 @@ function StudentList({
   onOpenAddModal,
   onDeleteStudent,
   onPayment,
+  records,
+  onUpdateStudentSchedule,
 }) {
   return (
     <section>
@@ -121,6 +265,8 @@ function StudentList({
               student={student}
               onDeleteStudent={onDeleteStudent}
               onPayment={onPayment}
+              records={records}
+              onUpdateStudentSchedule={onUpdateStudentSchedule}
             />
           ))
         )}
