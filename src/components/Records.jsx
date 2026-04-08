@@ -143,6 +143,9 @@ function Records({ records, studentsMap }) {
                     收款：RM {Number(record.paymentAmount ?? 0).toFixed(2)}
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
+                    付款方式：{record.paymentMethod ?? '-'}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
                     增加课数：+{record.amount}
                   </p>
                 </>

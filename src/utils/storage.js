@@ -23,6 +23,8 @@ function normalizeData(rawData) {
     sessions: Array.isArray(record.sessions) ? record.sessions : [],
     paymentAmount:
       typeof record.paymentAmount === 'number' ? record.paymentAmount : null,
+    paymentMethod:
+      typeof record.paymentMethod === 'string' ? record.paymentMethod : null,
   }))
 
   return {

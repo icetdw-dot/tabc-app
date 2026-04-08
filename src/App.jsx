@@ -11,7 +11,15 @@ const TABS = [
   { key: 'records', label: '记录' },
 ]
 
-function createRecord(studentId, type, amount, paymentAmount = null, sessions = []) {
+function createRecord(
+  studentId,
+  type,
+  amount,
+  paymentAmount = null,
+  sessions = [],
+  recordDate = null,
+  paymentMethod = null,
+) {
   return {
     id: crypto.randomUUID(),
     studentId,
@@ -19,7 +27,8 @@ function createRecord(studentId, type, amount, paymentAmount = null, sessions = 
     amount,
     paymentAmount,
     sessions,
-    date: new Date().toISOString(),
+    paymentMethod,
+    date: recordDate ?? new Date().toISOString(),
   }
 }
 
@@ -75,7 +84,7 @@ function App() {
     persistData({ ...appData, students: nextStudents })
   }
 
-  const handlePayment = (studentId, paymentAmount, lessonAmount) => {
+  const handlePayment = (studentId, paymentAmount, lessonAmount, paymentMethod) => {
     const nextStudents = appData.students.map((student) =>
       student.id === studentId
         ? { ...student, remainingLessons: student.remainingLessons + lessonAmount }
@@ -83,13 +92,13 @@ function App() {
     )
 
     const nextRecords = [
-      createRecord(studentId, 'recharge', lessonAmount, paymentAmount),
+      createRecord(studentId, 'recharge', lessonAmount, paymentAmount, [], null, paymentMethod),
       ...appData.records,
     ]
     persistData({ students: nextStudents, records: nextRecords })
   }
 
-  const handleDeductLesson = (studentId, type, sessions) => {
+  const handleDeductLesson = (studentId, type, sessions, recordDate) => {
     const deductionCount = sessions.length
     const targetStudent = appData.students.find((student) => student.id === studentId)
     if (!targetStudent || deductionCount <= 0) return
@@ -102,7 +111,7 @@ function App() {
     )
 
     const nextRecords = [
-      createRecord(studentId, type, -deductionCount, null, sessions),
+      createRecord(studentId, type, -deductionCount, null, sessions, recordDate),
       ...appData.records,
     ]
     persistData({ students: nextStudents, records: nextRecords })

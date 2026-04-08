@@ -18,6 +18,7 @@ function getTodayWeekday() {
 
 function StudentAttendanceCard({ student, onDeductLesson, selectedWeekday }) {
   const [selectedSessions, setSelectedSessions] = useState([])
+  const [customDateTime, setCustomDateTime] = useState('')
   const scheduleOptions = (student.schedule ?? []).filter(
     (item) => item.weekday === selectedWeekday,
   )
@@ -33,6 +34,7 @@ function StudentAttendanceCard({ student, onDeductLesson, selectedWeekday }) {
 
   const deductionCount = selectedSessions.length
   const canSubmit = deductionCount > 0 && student.remainingLessons >= deductionCount
+  const customRecordDate = customDateTime ? new Date(customDateTime).toISOString() : null
 
   return (
     <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
@@ -88,7 +90,7 @@ function StudentAttendanceCard({ student, onDeductLesson, selectedWeekday }) {
         <button
           type="button"
           disabled={!canSubmit || scheduleOptions.length === 0}
-          onClick={() => onDeductLesson(student.id, 'attendance', selectedSessions)}
+          onClick={() => onDeductLesson(student.id, 'attendance', selectedSessions, null)}
           className="rounded-xl bg-blue-500 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           点名扣课
@@ -96,11 +98,43 @@ function StudentAttendanceCard({ student, onDeductLesson, selectedWeekday }) {
         <button
           type="button"
           disabled={!canSubmit || scheduleOptions.length === 0}
-          onClick={() => onDeductLesson(student.id, 'makeup', selectedSessions)}
+          onClick={() => onDeductLesson(student.id, 'makeup', selectedSessions, null)}
           className="rounded-xl bg-violet-500 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           补课扣课
         </button>
+      </div>
+
+      <div className="mt-3 rounded-xl bg-slate-50 p-3">
+        <p className="mb-2 text-xs font-medium text-slate-500">补录扣课（可选日期时间）</p>
+        <input
+          type="datetime-local"
+          value={customDateTime}
+          onChange={(event) => setCustomDateTime(event.target.value)}
+          className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
+        />
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            disabled={!canSubmit || !customRecordDate || scheduleOptions.length === 0}
+            onClick={() =>
+              onDeductLesson(student.id, 'attendance', selectedSessions, customRecordDate)
+            }
+            className="rounded-xl bg-blue-100 py-2 text-xs font-semibold text-blue-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+          >
+            按选定时间点名
+          </button>
+          <button
+            type="button"
+            disabled={!canSubmit || !customRecordDate || scheduleOptions.length === 0}
+            onClick={() =>
+              onDeductLesson(student.id, 'makeup', selectedSessions, customRecordDate)
+            }
+            className="rounded-xl bg-violet-100 py-2 text-xs font-semibold text-violet-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+          >
+            按选定时间补课
+          </button>
+        </div>
       </div>
     </article>
   )

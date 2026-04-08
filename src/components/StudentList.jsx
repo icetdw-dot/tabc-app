@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 const WEEKDAY_OPTIONS = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
+const PAYMENT_METHOD_OPTIONS = ['现金', '银行转账', "Touch 'n Go"]
 
 function formatDateTime(dateString) {
   return new Date(dateString).toLocaleString('zh-CN', {
@@ -20,6 +21,7 @@ function StudentCard({
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState('')
   const [lessonAmount, setLessonAmount] = useState('0')
+  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD_OPTIONS[0])
   const [weekday, setWeekday] = useState(WEEKDAY_OPTIONS[0])
   const [timeSlot, setTimeSlot] = useState('')
 
@@ -30,9 +32,10 @@ function StudentCard({
     if (Number.isNaN(payment) || payment <= 0) return
     if (Number.isNaN(lessons) || lessons < 0) return
 
-    onPayment(student.id, payment, lessons)
+    onPayment(student.id, payment, lessons, paymentMethod)
     setPaymentAmount('')
     setLessonAmount('0')
+    setPaymentMethod(PAYMENT_METHOD_OPTIONS[0])
     setShowPaymentForm(false)
   }
 
@@ -113,6 +116,17 @@ function StudentCard({
             className="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
             placeholder="增加课数(可0)"
           />
+          <select
+            value={paymentMethod}
+            onChange={(event) => setPaymentMethod(event.target.value)}
+            className="col-span-2 h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
+          >
+            {PAYMENT_METHOD_OPTIONS.map((method) => (
+              <option key={method} value={method}>
+                {method}
+              </option>
+            ))}
+          </select>
           <button
             type="submit"
             className="col-span-2 h-11 rounded-xl bg-slate-900 px-3 text-sm font-semibold text-white"
@@ -205,7 +219,12 @@ function StudentCard({
                         : '补课扣课'}
                   </p>
                   {record.type === 'recharge' ? (
-                    <p className="mt-1 text-xs text-slate-500">增加课数：+{record.amount}</p>
+                    <>
+                      <p className="mt-1 text-xs text-slate-500">增加课数：+{record.amount}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        付款方式：{record.paymentMethod ?? '-'}
+                      </p>
+                    </>
                   ) : (
                     <>
                       <p className="mt-1 text-xs text-slate-500">扣课：{record.amount}</p>
