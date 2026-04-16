@@ -3,6 +3,10 @@ import { useState } from 'react'
 const WEEKDAY_OPTIONS = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
 const PAYMENT_METHOD_OPTIONS = ['现金', '银行转账', "Touch 'n Go"]
 
+function getBillingTypeLabel(type) {
+  return type === 'dropin' ? '散户' : '月费'
+}
+
 function formatDateTime(dateString) {
   return new Date(dateString).toLocaleString('zh-CN', {
     hour12: false,
@@ -15,6 +19,7 @@ function StudentCard({
   onPayment,
   records,
   onUpdateStudentSchedule,
+  onDeleteRecord,
 }) {
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [showStudentRecords, setShowStudentRecords] = useState(false)
@@ -66,7 +71,10 @@ function StudentCard({
   return (
     <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold">{student.name}</h3>
+        <div>
+          <h3 className="text-base font-semibold">{student.name}</h3>
+          <p className="mt-1 text-xs text-slate-500">{getBillingTypeLabel(student.billingType)}</p>
+        </div>
         <button
           type="button"
           onClick={() => onDeleteStudent(student.id)}
@@ -231,6 +239,13 @@ function StudentCard({
                       <p className="mt-1 text-xs text-slate-500">
                         时段：{record.sessions?.length ? record.sessions.join(', ') : '-'}
                       </p>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteRecord(record.id)}
+                        className="mt-2 rounded-lg bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600"
+                      >
+                        删除扣课
+                      </button>
                     </>
                   )}
                   <p className="mt-1 text-xs text-slate-400">{formatDateTime(record.date)}</p>
@@ -253,6 +268,7 @@ function StudentList({
   onPayment,
   records,
   onUpdateStudentSchedule,
+  onDeleteRecord,
 }) {
   return (
     <section>
@@ -286,6 +302,7 @@ function StudentList({
               onPayment={onPayment}
               records={records}
               onUpdateStudentSchedule={onUpdateStudentSchedule}
+              onDeleteRecord={onDeleteRecord}
             />
           ))
         )}

@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'tabc-app-data'
 const LEGACY_STORAGE_KEYS = ['tabc-app-data-v1']
-const CURRENT_SCHEMA_VERSION = 2
+const CURRENT_SCHEMA_VERSION = 3
 
 const defaultData = {
   schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -15,6 +15,7 @@ function normalizeData(rawData) {
 
   const students = rawData.students.map((student) => ({
     ...student,
+    billingType: student.billingType === 'dropin' ? 'dropin' : 'monthly',
     schedule: Array.isArray(student.schedule) ? student.schedule : [],
   }))
 

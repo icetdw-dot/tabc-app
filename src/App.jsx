@@ -65,13 +65,14 @@ function App() {
     saveAppData(nextData)
   }
 
-  const handleAddStudent = (name, initialLessons) => {
+  const handleAddStudent = (name, initialLessons, billingType) => {
     const studentId = crypto.randomUUID()
     const nextStudents = [
       {
         id: studentId,
         name: name.trim(),
         remainingLessons: initialLessons,
+        billingType,
         schedule: [],
       },
       ...appData.students,
@@ -124,6 +125,21 @@ function App() {
     persistData({ ...appData, students: nextStudents })
   }
 
+  const handleDeleteRecord = (recordId) => {
+    const targetRecord = appData.records.find((record) => record.id === recordId)
+    if (!targetRecord) return
+    if (targetRecord.type !== 'attendance' && targetRecord.type !== 'makeup') return
+
+    const nextStudents = appData.students.map((student) =>
+      student.id === targetRecord.studentId
+        ? { ...student, remainingLessons: student.remainingLessons + Math.abs(targetRecord.amount) }
+        : student,
+    )
+
+    const nextRecords = appData.records.filter((record) => record.id !== recordId)
+    persistData({ students: nextStudents, records: nextRecords })
+  }
+
   const filteredStudents = useMemo(() => {
     const normalizedKeyword = searchKeyword.trim().toLowerCase()
     if (!normalizedKeyword) return normalizedStudents
@@ -151,6 +167,7 @@ function App() {
             onPayment={handlePayment}
             records={sortedRecords}
             onUpdateStudentSchedule={handleUpdateStudentSchedule}
+            onDeleteRecord={handleDeleteRecord}
           />
         )}
 
@@ -159,7 +176,11 @@ function App() {
         )}
 
         {activeTab === 'records' && (
-          <Records records={sortedRecords} studentsMap={studentsMap} />
+          <Records
+            records={sortedRecords}
+            studentsMap={studentsMap}
+            onDeleteRecord={handleDeleteRecord}
+          />
         )}
       </main>
 

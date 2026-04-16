@@ -26,9 +26,25 @@ function getDateOnly(dateString) {
   return `${year}-${month}-${day}`
 }
 
-function Records({ records, studentsMap }) {
+function getMonthOnly(dateString) {
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
+}
+
+function getCurrentMonth() {
+  return getMonthOnly(new Date().toISOString())
+}
+
+function getBillingTypeLabel(type) {
+  return type === 'dropin' ? '散户' : '月费'
+}
+
+function Records({ records, studentsMap, onDeleteRecord }) {
   const [activeFilter, setActiveFilter] = useState('all')
   const [selectedDate, setSelectedDate] = useState('')
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth())
 
   const filteredRecords = useMemo(() => {
     let nextRecords = records
@@ -50,6 +66,16 @@ function Records({ records, studentsMap }) {
 
     return nextRecords
   }, [records, activeFilter, selectedDate])
+
+  const monthlyPaymentTotal = useMemo(
+    () =>
+      records
+        .filter(
+          (record) => record.type === 'recharge' && getMonthOnly(record.date) === selectedMonth,
+        )
+        .reduce((sum, record) => sum + Number(record.paymentAmount ?? 0), 0),
+    [records, selectedMonth],
+  )
 
   return (
     <section className="space-y-3">
@@ -114,6 +140,23 @@ function Records({ records, studentsMap }) {
         </div>
       )}
 
+      {activeFilter === 'payment' && (
+        <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
+          <label className="mb-1 block text-xs font-medium text-slate-500">
+            选择月份查看总收款
+          </label>
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(event) => setSelectedMonth(event.target.value)}
+            className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
+          />
+          <p className="mt-3 text-sm font-semibold text-emerald-600">
+            {selectedMonth} 总收款：RM {monthlyPaymentTotal.toFixed(2)}
+          </p>
+        </div>
+      )}
+
       {filteredRecords.length === 0 ? (
         <div className="rounded-2xl bg-white p-6 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
           暂无操作记录。
@@ -121,6 +164,7 @@ function Records({ records, studentsMap }) {
       ) : (
         filteredRecords.map((record) => {
           const studentName = studentsMap[record.studentId]?.name ?? '已删除学生'
+          const billingType = studentsMap[record.studentId]?.billingType ?? 'monthly'
           const amountPrefix = record.amount > 0 ? '+' : ''
           return (
             <article
@@ -128,7 +172,10 @@ function Records({ records, studentsMap }) {
               className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
             >
               <div className="flex items-center justify-between gap-2">
-                <h3 className="truncate text-base font-semibold">{studentName}</h3>
+                <div>
+                  <h3 className="truncate text-base font-semibold">{studentName}</h3>
+                  <p className="mt-1 text-xs text-slate-500">{getBillingTypeLabel(billingType)}</p>
+                </div>
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${
                     typeColorMap[record.type]
@@ -158,6 +205,13 @@ function Records({ records, studentsMap }) {
                   <p className="mt-1 text-sm text-slate-600">
                     时段：{record.sessions?.length ? record.sessions.join(', ') : '-'}
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteRecord(record.id)}
+                    className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600"
+                  >
+                    删除扣课
+                  </button>
                 </>
               )}
               <p className="mt-1 text-xs text-slate-500">{formatDate(record.date)}</p>

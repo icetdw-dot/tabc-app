@@ -1,6 +1,11 @@
 import { useState } from 'react'
 
 const WEEKDAY_OPTIONS = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
+const BILLING_FILTERS = [
+  { key: 'all', label: '全部' },
+  { key: 'monthly', label: '月费' },
+  { key: 'dropin', label: '散户' },
+]
 
 function getTodayWeekday() {
   const day = new Date().getDay()
@@ -142,10 +147,16 @@ function StudentAttendanceCard({ student, onDeductLesson, selectedWeekday }) {
 
 function Attendance({ students, onDeductLesson }) {
   const [selectedWeekday, setSelectedWeekday] = useState(getTodayWeekday())
+  const [billingFilter, setBillingFilter] = useState('all')
 
-  const filteredStudents = students.filter((student) =>
-    (student.schedule ?? []).some((item) => item.weekday === selectedWeekday),
-  )
+  const filteredStudents = students.filter((student) => {
+    const matchesWeekday = (student.schedule ?? []).some(
+      (item) => item.weekday === selectedWeekday,
+    )
+    const matchesBilling =
+      billingFilter === 'all' ? true : student.billingType === billingFilter
+    return matchesWeekday && matchesBilling
+  })
 
   return (
     <section className="space-y-3">
@@ -164,6 +175,24 @@ function Attendance({ students, onDeductLesson }) {
                 }`}
               >
                 {weekday}
+              </button>
+            )
+          })}
+        </div>
+        <p className="mb-2 mt-3 text-xs font-medium text-slate-500">按学员类型过滤</p>
+        <div className="grid grid-cols-3 gap-2">
+          {BILLING_FILTERS.map((item) => {
+            const active = billingFilter === item.key
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setBillingFilter(item.key)}
+                className={`rounded-xl py-2 text-xs font-medium ${
+                  active ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {item.label}
               </button>
             )
           })}

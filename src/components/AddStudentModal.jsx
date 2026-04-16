@@ -3,11 +3,13 @@ import { useEffect, useState } from 'react'
 function AddStudentModal({ open, onClose, onConfirm }) {
   const [name, setName] = useState('')
   const [initialLessons, setInitialLessons] = useState(10)
+  const [billingType, setBillingType] = useState('monthly')
 
   useEffect(() => {
     if (!open) {
       setName('')
       setInitialLessons(10)
+      setBillingType('monthly')
     }
   }, [open])
 
@@ -19,7 +21,7 @@ function AddStudentModal({ open, onClose, onConfirm }) {
     const lessons = Number(initialLessons)
 
     if (!trimmedName || Number.isNaN(lessons) || lessons < 0) return
-    onConfirm(trimmedName, lessons)
+    onConfirm(trimmedName, lessons, billingType)
     onClose()
   }
 
@@ -53,6 +55,18 @@ function AddStudentModal({ open, onClose, onConfirm }) {
             className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-3 text-base outline-none ring-0 focus:border-slate-900"
             required
           />
+        </label>
+
+        <label className="mt-3 block text-sm font-medium text-slate-700">
+          学员类型
+          <select
+            value={billingType}
+            onChange={(event) => setBillingType(event.target.value)}
+            className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-3 text-base outline-none ring-0 focus:border-slate-900"
+          >
+            <option value="monthly">月费</option>
+            <option value="dropin">散户</option>
+          </select>
         </label>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
